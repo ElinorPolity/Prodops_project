@@ -48,9 +48,14 @@ data_new["revers_text"]=data_new["compeny_and_year"].apply(lambda row : row[::-1
 data_new["year"]=data_new["compeny_and_year"].apply(lambda row :row[len(row)-4:])
 data_new
 
-#data_new.groupby("year").plot(x="revers_text",y="number_of_events",kind="bar")
-data_new.groupby("year").plot(x="revers_text", y=["costs", "normalize"], kind="bar")
-#data_new.groupby("year").plot(x="revers_text",y="costs",kind="bar")
+#creating plot fo each year
+years_arry=data_new["year"].drop_duplicates().sort_values()
+years_arry
+for year in years_arry :
+    ooo=data_new[data_new["year"]==year]
+    ooo.plot(x="revers_text", y=["costs", "normalize"], kind="bar",title="year "+year)
+
+
 
 ##tring another option
 data_new.drop("number_of_events")

@@ -2,16 +2,20 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import datetime
+import matplotlib.dates as mdates
 
-data = pd.read_excel("C:\PRODOPS\data_try.xlsx")
-data=data.drop(0).reset_index()
+data = pd.read_excel("C:\PRODOPS\data_try_2.xlsx")
 data=data.rename(columns={"חובה (מקומי)":"costs","שם חשבון קיזוז":"compeny_of_service","תאריך ערך":"date"})
+title_of_machine=str(data.head(1)["הערות"])[5:52]
+data=data.drop(0).reset_index()
 data
 
 #in this part im creating a plot based half a year
 data["year"]=data["date"].apply(lambda row: str(str(row)[:4]))
 data["part_of_year"]=data["date"].apply(lambda row: "01" if int(str(row)[6:7])<7 else "07")#changing dates to first or seconde part of the year
 data["part_of_year"]=data["part_of_year"].apply(lambda row: str(row))
+data=data.sort_values(by=["year","part_of_year"])
 data_per__half_year_total=pd.DataFrame()
 data["updated_date"]=data[['year',"part_of_year"]].agg('-'.join, axis=1)#joining together so i could group
 data["sum_of_pay_for_a_half_year"]=data.groupby("updated_date")["costs"].transform("sum")#gruping and sum
@@ -35,7 +39,6 @@ plt.pie(data_per_year_total["sum_of_pay_for_a_year"],labels=data_per_year_total[
 plt.legend(title = "year:")
 plt.savefig(r'C:\PRODOPS\images\python_pretty_plot_pie.png', dpi=300, bbox_inches='tight')
 plt.show()
-
 
 #how much did we spend on each compeny in all the mechine life time/time of service
 

@@ -8,6 +8,31 @@ data=data.drop(0).reset_index()
 data=data.rename(columns={"חובה (מקומי)":"costs","שם חשבון קיזוז":"compeny_of_service","תאריך ערך":"date"})
 data
 
+#in this part im creating a plot based half a year
+data["year"]=data["date"].apply(lambda row: str(str(row)[:4]))
+data["part_of_year"]=data["date"].apply(lambda row: "01" if int(str(row)[6:7])<7 else "07")#changing dates to first or seconde part of the year
+data["part_of_year"]=data["part_of_year"].apply(lambda row: str(row))
+data_per__half_year_total=pd.DataFrame()
+data["updated_date"]=data[['year',"part_of_year"]].agg('-'.join, axis=1)#joining together so i could group
+data["sum_of_pay_for_a_half_year"]=data.groupby("updated_date")["costs"].transform("sum")#gruping and sum
+data_per__half_year_total[["updated_date","sum_of_pay_for_a_half_year"]]=data[["updated_date","sum_of_pay_for_a_half_year"]]
+data_per__half_year_total=data_per__half_year_total.drop_duplicates().reset_index()
+data_per__half_year_total
+
+x1=mdates.datestr2num(data_per__half_year_total["updated_date"])#turning the str to a date object of mdates
+plt.plot_date(x1,data_per__half_year_total["sum_of_pay_for_a_half_year"],fmt="bo", tz=None, xdate=True,linestyle='solid', marker='None')
+plt.title("costs per half a year")
+plt.show()
+
+#in this part, creating a pie plot per year
+data_per_year_total=pd.DataFrame()
+data["sum_of_pay_for_a_year"]=data.groupby("year")["costs"].transform("sum")
+data_per_year_total[["year","sum_of_pay_for_a_year"]]=data[["year","sum_of_pay_for_a_year"]]
+data_per_year_total=data_per_year_total.drop_duplicates().reset_index()
+plt.pie(data_per_year_total["sum_of_pay_for_a_year"],labels=data_per_year_total["year"],shadow = True)
+plt.legend(title = "year:")
+plt.show()
+
 #let see how much money we pay every year 
 data["year"]=data["date"].apply(lambda row: str(str(row)[:4]))
 data_per_year_total=pd.DataFrame()
@@ -56,18 +81,3 @@ for year in years_arry :
     ooo.plot(x="revers_text", y=["costs", "normalize"], kind="bar",title="year "+year)
 
 
-
-##tring another option
-data_new.drop("number_of_events")
-grouped = data_new.groupby('year')
-
-ncols=2
-nrows = int(np.ceil(grouped.ngroups/ncols))
-
-fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12,12), sharey=True)
-
-for (key, ax) in zip(grouped.groups.keys(), axes.flatten()):
-    grouped.get_group(key).plot(ax=ax)
-
-ax.legend()
-plt.show()

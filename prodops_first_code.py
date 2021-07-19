@@ -17,11 +17,13 @@ data["updated_date"]=data[['year',"part_of_year"]].agg('-'.join, axis=1)#joining
 data["sum_of_pay_for_a_half_year"]=data.groupby("updated_date")["costs"].transform("sum")#gruping and sum
 data_per__half_year_total[["updated_date","sum_of_pay_for_a_half_year"]]=data[["updated_date","sum_of_pay_for_a_half_year"]]
 data_per__half_year_total=data_per__half_year_total.drop_duplicates().reset_index()
+data_per__half_year_total=data_per__half_year_total.drop("index",axis=1)
 data_per__half_year_total
 
 x1=mdates.datestr2num(data_per__half_year_total["updated_date"])#turning the str to a date object of mdates
 plt.plot_date(x1,data_per__half_year_total["sum_of_pay_for_a_half_year"],fmt="bo", tz=None, xdate=True,linestyle='solid', marker='None')
 plt.title("costs per half a year")
+plt.savefig(r'C:\PRODOPS\images\python_pretty_plot.png',dpi=300, bbox_inches='tight')
 plt.show()
 
 #in this part, creating a pie plot per year
@@ -31,14 +33,9 @@ data_per_year_total[["year","sum_of_pay_for_a_year"]]=data[["year","sum_of_pay_f
 data_per_year_total=data_per_year_total.drop_duplicates().reset_index()
 plt.pie(data_per_year_total["sum_of_pay_for_a_year"],labels=data_per_year_total["year"],shadow = True)
 plt.legend(title = "year:")
+plt.savefig(r'C:\PRODOPS\images\python_pretty_plot_pie.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-#let see how much money we pay every year 
-data["year"]=data["date"].apply(lambda row: str(str(row)[:4]))
-data_per_year_total=pd.DataFrame()
-data["sum_of_pay_for_a_year"]=data.groupby("year")["costs"].transform("sum")
-plt.plot(data["year"], data["sum_of_pay_for_a_year"])  # Plot the chart
-plt.show()
 
 #how much did we spend on each compeny in all the mechine life time/time of service
 
@@ -80,4 +77,14 @@ for year in years_arry :
     ooo=data_new[data_new["year"]==year]
     ooo.plot(x="revers_text", y=["costs", "normalize"], kind="bar",title="year "+year)
 
+#in this part in save all the wanted data to an excle file
+#in order to transfer the data to excle
+writer = pd.ExcelWriter(r'C:\PRODOPS\analized_data.xlsx', engine='xlsxwriter')
+# Write each dataframe to a different worksheet.
+data_per__half_year_total.to_excel(writer, sheet_name='Sheet1')
+worksheet = writer.sheets['Sheet1']
+worksheet.insert_image('C2','C:\PRODOPS\images\python_pretty_plot.png')
+worksheet.insert_image('C3','C:\PRODOPS\images\python_pretty_plot_pie.png')
 
+# Close the Pandas Excel writer and output the Excel file.
+writer.save()

@@ -1,0 +1,70 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime
+import matplotlib.dates as mdates
+
+
+
+def data_analizing(writer,i,data):
+    data=data.reset_index()
+    title_of_machine=str(data.head(1)["הערות"])[5:52]
+    data=data.drop(0).reset_index()
+    
+    #in this part im creating a plot based half a year
+    data["year"]=data["date"].apply(lambda row: str(str(row)[:4]))
+    data["part_of_year"]=data["date"].apply(lambda row: "01" if int(str(row)[6:7])<7 else "07")#changing dates to first or seconde part of the year
+    data["part_of_year"]=data["part_of_year"].apply(lambda row: str(row))
+    data=data.sort_values(by=["year","part_of_year"])
+    data_per__half_year_total=pd.DataFrame()
+    data["updated_date"]=data[['year',"part_of_year"]].agg('-'.join, axis=1)#joining together so i could group
+    data["sum_of_pay_for_a_half_year"]=data.groupby("updated_date")["costs"].transform("sum")#gruping and sum
+    data_per__half_year_total[["updated_date","sum_of_pay_for_a_half_year"]]=data[["updated_date","sum_of_pay_for_a_half_year"]]
+    data_per__half_year_total=data_per__half_year_total.drop_duplicates().reset_index()
+    data_per__half_year_total=data_per__half_year_total.drop("index",axis=1)
+
+    x1=mdates.datestr2num(data_per__half_year_total["updated_date"])#turning the str to a date object of mdates
+    plt.plot_date(x1,data_per__half_year_total["sum_of_pay_for_a_half_year"],fmt="bo", tz=None, xdate=True,linestyle='solid', marker='None')
+    plt.title("costs per half a year")
+    plt.savefig(r'C:\PRODOPS\images\python_pretty_plot'+i+'.png',dpi=300, bbox_inches='tight')
+    plt.clf()#tels the plt we are done with tha plot
+
+    #in this part, creating a pie plot per year
+    data_per_year_total=pd.DataFrame()
+    data["sum_of_pay_for_a_year"]=data.groupby("year")["costs"].transform("sum")
+    data_per_year_total[["year","sum_of_pay_for_a_year"]]=data[["year","sum_of_pay_for_a_year"]]
+    data_per_year_total=data_per_year_total.drop_duplicates().reset_index()
+    plt.pie(data_per_year_total["sum_of_pay_for_a_year"],labels=data_per_year_total["year"],shadow = True)
+    plt.legend(title = "year:")
+    plt.savefig(r'C:\PRODOPS\images\python_pretty_plot_pie'+i+'.png', dpi=300, bbox_inches='tight')
+    plt.clf()
+
+    # Write each dataframe to a different worksheet.
+    data.head(0)["הערות"].to_excel(writer, sheet_name='Sheet'+i)
+    data_per__half_year_total.to_excel(writer, sheet_name='Sheet'+i)
+    worksheet = writer.sheets['Sheet'+i]
+    worksheet.write(0, 10, title_of_machine)
+    worksheet.insert_image('C2','C:\PRODOPS\images\python_pretty_plot'+i+'.png')
+    worksheet.insert_image('C3','C:\PRODOPS\images\python_pretty_plot_pie'+i+'.png')
+    
+    if __name__ == "__main__":
+    writer = pd.ExcelWriter(r'C:\PRODOPS\analized_data.xlsx', engine='xlsxwriter')
+    data = pd.read_excel("C:\PRODOPS\Data.xlsx")
+    data=data.rename(columns={"חובה (מקומי)":"costs","שם חשבון קיזוז":"compeny_of_service","תאריך ערך":"date"})
+    i=1
+    start=0
+    for index, row in data.iterrows():
+        if(row["תאריך אסמכתא"]=="עלות המכירות"and index!=0 ):
+            Data_per_mechine=data.loc[ start:index-2 , : ]
+            data_analizing(writer,str(i),Data_per_mechine)
+            start=index
+            i=i+1
+        if(index==len(data)-1):
+            Data_per_mechine=data.loc[ start:index-2 , : ]
+            data_analizing(writer,str(i),Data_per_mechine)
+            start=index
+            i=i+1
+    writer.save()
+
+    

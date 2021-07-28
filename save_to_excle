@@ -6,10 +6,7 @@ import datetime
 import matplotlib.dates as mdates
 
 
-
 def data_analizing(writer,i,data):
-    
-    plt.clf()
     
     data=data.reset_index()
     title_of_machine=str(data.head(1)["הערות"])[5:52]
@@ -99,6 +96,23 @@ def data_analizing(writer,i,data):
     fig3 = p3.get_figure()
     fig3.savefig(r'C:\PRODOPS\images\n'+i+'.png', dpi=300, bbox_inches='tight')
     fig3.clf()
+    
+    #anlyzing compenys per year
+    data_per_year=pd.DataFrame()
+    data_per_year["compeny_and_year"]=data[["compeny_of_service","year"]].agg('-'.join, axis=1)
+    
+    # let see how much we take out on each compeny per year
+    type_group = data["costs"].groupby(data_per_year["compeny_and_year"])
+    x1=type_group.sum()
+    x2=type_group.size()
+
+    data_new=pd.merge(x1,x2,on="compeny_and_year")
+    data_new=data_new.reset_index()
+    data_new=data_new.rename(columns={"costs_x":"costs","costs_y":"number_of_events"})
+    data_new["normalize"]=round(data_new.costs/data_new.number_of_events,2)
+    data_new["revers_text"]=data_new["compeny_and_year"].apply(lambda row : row[::-1])
+    data_new["year"]=data_new["compeny_and_year"].apply(lambda row :row[len(row)-4:])
+
 
     # Write each dataframe to a different worksheet.
     data.head(0)["הערות"].to_excel(writer, sheet_name='Sheet'+i)
@@ -120,6 +134,21 @@ def data_analizing(writer,i,data):
     worksheet.insert_image(4,18,'C:\PRODOPS\images\\s'+i+'.png')
     worksheet.insert_image(4,27,'C:\PRODOPS\images\cost_per_compeny'+i+'.png')
     worksheet.insert_image(30,22,'C:\PRODOPS\images\\n'+i+'.png')
+    
+    #in this part we save the plots of the compenys in each year
+    years_arry=data_new["year"].drop_duplicates().sort_values()
+    years_arry
+    index = 1
+    for year in years_arry :
+        ooo=data_new[data_new["year"]==year]
+        p=ooo.plot(x="revers_text", y=["costs", "normalize"], kind="bar",title="year "+year)
+        fig = p.get_figure()
+        fig.savefig(r'C:\PRODOPS\images\compemy_yearly_sheet'+i+str(index)+'.png', dpi=300, bbox_inches='tight')
+        fig.clf()
+        worksheet.insert_image(66,10*index-10,'C:\PRODOPS\images\\compemy_yearly_sheet'+i+str(index)+'.png')
+        index+=1
+    
+
 
 if __name__ == "__main__":
     writer = pd.ExcelWriter(r'C:\PRODOPS\analized_data.xlsx', engine='xlsxwriter')
